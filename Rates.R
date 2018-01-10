@@ -6,7 +6,7 @@ get_rates <- function(curA, curB) {
   } else {
     url <- paste0("https://min-api.cryptocompare.com/data/histohour?fsym=", curA, "&tsym=", curB, "&e=CCCAGG&limit=10000")
     resp <- fromJSON(url)
-    write_json(resp, path)
+    write_json(resp, path, digits=32)
   }
   if (resp$Response != "Success") {
     NULL
