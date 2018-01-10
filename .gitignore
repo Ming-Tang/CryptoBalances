@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 *.nb.html
-rates/
+README.html
+rates/*.json
