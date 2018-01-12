@@ -10,10 +10,10 @@ source("Cryptopia.R")
 source("Binance.R")
 source("Etherscan.R")
 source("Electrum.R")
-
 source("import.R")
-
 source("Rates.R")
+
+setorder(Combined, -DateTime, -Id)
 ```
 
 # Current Balances
@@ -89,4 +89,10 @@ source("TradeAnalysis.R")
 
 ```{r}
 TradeAnalysis
+```
+
+# Non-Mining and Trading Transactions
+
+```{r}
+Combined[!(Group%in%c("Trade","Mining","TradeFee"))]
 ```

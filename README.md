@@ -20,6 +20,7 @@ Supported Data Sources
  - Binance: trades, deposit, withdraw in CSV
  
 Cryptocurrency exchanges rates are provided by CryptoCompare API.
+The rates are cached in the `rates/` folder.
 
 Data Format
 ===========

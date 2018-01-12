@@ -8,7 +8,7 @@ import_Etherscan <- function(addr) {
   
   Etherscan[, Sign := ifelse(to == addr, 1L, -1L)]
   #Etherscan[, dBal := as.numeric(value) * 1e-18] # as.bigq(Etherscan$value)/as.bigq(1e18)
-  Etherscan[, dBal := paste0(as.character(value), "/1", strrep("0", 18))]
+  Etherscan[, dBal := as.character(as.bigq(paste0(as.character(value), "/1", strrep("0", 18))))]
   Etherscan[, Date := as.Date(datetimes)][, DateTime := datetimes]
   setorder(Etherscan, -DateTime)
   Etherscan <- add_buy_sell(Etherscan, "ETH")

@@ -44,7 +44,7 @@ negate <- function(x) {
   ifelse(startsWith(x, "-"), substring(x, 2), ifelse(startsWith(x, "+"), paste0("-", substring(x, 2)), paste0("-", x))) 
 }
 
-is_zero <- function(x) { as.numeric(x) == 0 }
+is_zero <- function(x) { regexpr("^[+-]?0+(\\.0+)?(\\/.*)?$", x) != -1 }
 is_pos <- function(x) { !startsWith(x, "-") & !is_zero(x) }
 is_neg <- function(x) { startsWith(x, "-") }
 
