@@ -17,7 +17,7 @@ import_Poloniex_TradeHistory <- function(file) {
   Poloniex.TH <- fill_buy_sell(Poloniex.TH)
   Poloniex.TH[Type=="Buy", `:=`(Buy=Q, Sell=negate(B))]
   Poloniex.TH[Type=="Sell", `:=`(Buy=B, Sell=negate(Q))]
-  Poloniex.TH <- Poloniex.TH[, .(Date, DateTime, BuyCur, Buy, SellCur, Sell, Rate=Price, Exchange="Poloniex", Group="Trade")]
+  Poloniex.TH <- Poloniex.TH[, .(Date, DateTime, BuyCur, Buy, SellCur, Sell, Rate=Price, Id=`Order Number`, Exchange="Poloniex", Group="Trade", Type)]
   Poloniex.TH
 }
 

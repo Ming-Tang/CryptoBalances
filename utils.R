@@ -2,9 +2,9 @@
 from_unix_timestamp <- function(xs) {as.POSIXct(as.integer(xs), tz="UTC", origin="1970-01-01") }
 
 add_buy_sell <- function(DT, cur="BTC") {
-  DT[, `:=`(BuyCur=cur, Buy=0, SellCur=cur, Sell=0)]
+  DT[, `:=`(BuyCur=cur, Buy="0", SellCur=cur, Sell="0")]
   DT[Sign == 1L, Buy := dBal]
-  DT[Sign == -1L, Sell := -dBal]
+  DT[Sign == -1L, Sell := negate(dBal)]
   #if (nrow(DT[Sign %notin% c(1L, -1L)])) {
   #  warning("Invalid sign values detected.")
   #}

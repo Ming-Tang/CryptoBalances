@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+import.R
 *.nb.html
 README.html
 rates/*.json

@@ -3,47 +3,25 @@ title: "Report"
 output: html_notebook
 ---
 
-```{r setup, include=FALSE}
+```{r setup}
 source("init.R")
 source("Poloniex.R")
 source("Cryptopia.R")
+source("Binance.R")
 source("Etherscan.R")
 source("Electrum.R")
 
-Etherscan <- import_Etherscan("0xAAAAAAAAAAA")
-
-Electrum_BTC <- import_Electrum("~/electrum-history.csv", "BTC")
-Electrum_MONA <- import_Electrum("~/electrum-mona-history.csv", "MONA")
-
-Poloniex.TH <- import_Poloniex_TradeHistory("~/Downloads/tradeHistory-2.csv")
-Poloniex.DH <- import_Poloniex_DepositHistory("~/Downloads/depositHistory-3.csv")
-Poloniex.WH <- import_Poloniex_WithdrawHistory("~/Downloads/withdrawalHistory.csv")
-
-Cryptopia.TH <- import_Cryptopia_TradeHistory("~/Downloads/Trade_History-6.csv")
-Cryptopia.DH <- import_Cryptopia_DepositHistory("~/Downloads/Deposit_History.csv")
-Cryptopia.WH <- import_Cryptopia_WithdrawHistory("~/Downloads/Withdraw_History.csv")
-
-Electrum_MONA[is_pos(Buy), Group := "Mining"]
-Etherscan[startsWith(From, "0xea674") | startsWith(From, "0xfe92a"), Group := "Mining"]
-
-```
-
-```{r}
-Combined <- rbindlist(list(
-  Cryptopia.TH, Cryptopia.DH, Cryptopia.WH, 
-  Poloniex.TH, Poloniex.DH, Poloniex.WH,
-  Etherscan, Electrum_BTC, Electrum_MONA), fill=TRUE)
-Combined.D <- to_delta(Combined)
+source("import.R")
 
 source("Rates.R")
-
-Balances <- Combined.D[, .(Bal=as.character(as.numeric(bsum(dBal)))), by=Cur][order(Cur),]
-
-Balances <- Balances[,.(Bal, Bal.USD = Rates.N[[Cur]]$USD[.N, Close]*as.numeric(Bal), Bal.BTC = Rates.N[[Cur]]$BTC[.N, Close]*as.numeric(Bal)), by=Cur][order(-Bal.USD)]
 ```
 
 # Current Balances
 ```{r}
+
+Balances <- Combined.D[, .(Bal=as.character(as.numeric(bsum(dBal)))), by=Cur][order(Cur),]
+Balances <- Balances[,.(Bal, Bal.USD = Rates.N[[Cur]]$USD[.N, Close]*as.numeric(Bal), Bal.BTC = Rates.N[[Cur]]$BTC[.N, Close]*as.numeric(Bal)), by=Cur][order(-Bal.USD)]
+
 Balances
 ```
 
@@ -64,12 +42,12 @@ balance_summaries(Combined.D)
 
 ```{r}
 set.seed(100)
-cols <- rainbow(26, s=.6, v=.9)[sample(1:26,26)]
+cols <- rainbow(nrow(Balances), s=.6, v=.9)[sample(1L:nrow(Balances), nrow(Balances))]
 ggplot(aes(x="", y=Bal.USD, fill=Cur), data=Balances) +
   geom_bar(stat="identity") +
   coord_polar(theta="y", start=0) +
   scale_fill_manual(values=cols) +
-  scale_y_continuous(breaks=seq(0,10000,200), minor_breaks=seq(0,10000,50))
+ scale_y_continuous(breaks=seq(0,10000,200), minor_breaks=seq(0,10000,50))
 ```
 
 ## Trade vs. Non-Trade Balances

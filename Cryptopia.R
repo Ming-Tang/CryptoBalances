@@ -5,8 +5,10 @@ import_Cryptopia_TradeHistory <- function(file) {
     file, 
     col_types = cols(
       Amount = col_character(), 
+      `#` = col_character(),
       Fee = col_character(),
       Rate = col_character(), 
+      Type = col_character(), 
       Timestamp = col_datetime(format=Cryptopia_date_format),
       Total = col_character())))
   
@@ -16,7 +18,7 @@ import_Cryptopia_TradeHistory <- function(file) {
   Cryptopia.TH <- fill_buy_sell(Cryptopia.TH)
   Cryptopia.TH[Type=="Buy", `:=`(Buy=Amount, Sell=Total)]
   Cryptopia.TH[Type=="Sell", `:=`(Buy=Total, Sell=Amount)]
-  Cryptopia.TH <- Cryptopia.TH[, .(Date, DateTime, BuyCur, Buy, SellCur, Sell, Rate, Exchange="Cryptopia", Group="Trade")]
+  Cryptopia.TH <- Cryptopia.TH[, .(Date, DateTime, BuyCur, Buy, SellCur, Sell, Rate, Id=`#`, Exchange="Cryptopia", Group="Trade", Market, Type)]
   Cryptopia.TH 
 } 
 
