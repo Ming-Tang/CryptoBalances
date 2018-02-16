@@ -59,6 +59,13 @@ balance in one currency. For example, a buy/sell pair in a trade will be split i
  - `dBal`: Change in balance for the specified currency
  - `TId`: Used to group two rows into same the transaction in original form
 
+Known Issues
+============
+
+ - Ethereum token balances in wallets are not retrieved.
+ - Bitcoin Cash automatically issued by exchanges are not taken into account.
+ - Transaction fees are only listed for Etherscan transactions.
+
 Sample `import.R`
 =================
 
@@ -86,8 +93,5 @@ Combined <- rbindlist(list(
   Poloniex.TH, Poloniex.DH, Poloniex.WH,
   Binance.TH, Binance.DH, Binance.WH,
   Etherscan, Electrum_BTC), fill=TRUE)
-
-# Trade history in delta balance form
-Combined.D <- to_delta(Combined)
 
 ```

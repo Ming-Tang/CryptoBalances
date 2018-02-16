@@ -11,28 +11,52 @@ source("Binance.R")
 source("Etherscan.R")
 source("Electrum.R")
 source("import.R")
-source("Rates.R")
 
-setorder(Combined, -DateTime, -Id)
+setorder(Combined, -DateTime)
+Combined[BuyCur=="STR", BuyCur:="XLM"][SellCur=="STR", SellCur:="XLM"]
+Combined.D <- to_delta(Combined)
+
+source("Rates.R")
+source("RatesAgg.R")
+
+Combined.D <- Combined.D[, {cur=Cur; add_rates(.SD, Rates.USD, cur)}, by=Cur]
+Combined.D <- Combined.D[, {cur=Cur; add_rates(.SD, Rates.BTC, cur)}, by=Cur]
+Combined.D[Cur=="USD", Rate.USD:=1]
+Combined.D[Cur=="BTC", `:=`(RateBTC=1, RateSat=100000000L)]
+Combined.D[is.na(RateUSD), RateUSD := 0]
+Combined.D[is.na(RateSat), RateSat := 0L]
+Combined.D[is.na(RateBTC), RateBTC := 0]
+
+setkey(Combined.D, DateTime)
+setorder(Combined.D, DateTime)
 ```
 
 # Current Balances
 ```{r}
-usd_rate <- function(Cur) { Rates.N[[Cur]]$USD[.N, Close]  }
-btc_rate <- function(Cur) { Rates.N[[Cur]]$BTC[.N, Close]  }
+usd_rate <- function(Cur) { if (is.null(Rates.N[[Cur]]$USD)) 0 else Rates.N[[Cur]]$USD[.N, Close]  }
+btc_rate <- function(Cur) { if (is.null(Rates.N[[Cur]]$BTC)) 0 else Rates.N[[Cur]]$BTC[.N, Close]  }
 
 Balances <- Combined.D[, .(Bal=as.character(as.numeric(bsum(dBal)))), by=Cur][order(Cur),]
 Balances <- Balances[,.(Bal, Bal.USD = usd_rate(Cur)*as.numeric(Bal), Bal.BTC = btc_rate(Cur)*as.numeric(Bal)), by=Cur]
-Balances <- Balances[, Frac := Bal.BTC/sum(Bal.BTC)][order(-Frac)]
+Balances <- Balances[, Frac := Bal.USD/sum(Bal.USD)][order(-Frac)]
 
 Balances
+list(USD=sum(Balances$Bal.USD), BTC=sum(Balances$Bal.BTC))
 ```
 
 ```{r}
 levels_Cur <- Balances[, Cur[order(Frac)]]
-Balances1 <- Balances[Bal.USD>0, .(Cur=factor(Cur, levels=levels_Cur), Bal.USD, Frac)]
-ggplot(aes(Cur, Bal.USD, fill=Cur), data=Balances1) + geom_bar(stat="identity") + coord_flip()
-ggplot(aes(Cur, Frac, fill=Cur), data=Balances1) + geom_bar(stat="identity") + coord_flip() + scale_y_continuous(breaks=seq(0,1,0.05), minor_breaks=c(0.0025,0.005,seq(0,1,0.01)))
+Balances1 <- Balances[Bal.USD>0, .(Cur=factor(Cur, levels=levels_Cur), Bal.BTC, Bal.USD, Frac)]
+opts <- list(geom_bar(stat="identity", show.legend=FALSE), coord_flip())
+
+ggplot(aes(Cur, Bal.USD, fill=Cur), data=Balances1) + opts +
+  scale_y_continuous(breaks=seq(0,1000,50), minor_breaks=seq(0,1000,10))
+
+ggplot(aes(Cur, Bal.BTC, fill=Cur), data=Balances1) + opts +
+  scale_y_continuous(breaks=seq(0,1,0.005), minor_breaks=seq(0,1,0.001))
+
+ggplot(aes(Cur, Frac, fill=Cur), data=Balances1) + opts +
+  scale_y_continuous(breaks=seq(0,1,0.05), minor_breaks=c(0.0025,0.005,seq(0,1,0.01)))
 ```
 
 # Balances by Group
@@ -54,19 +78,41 @@ BG <- balance_summaries(Combined.D)
 BG
 
 exchange_cols <- c(Poloniex="#009977", Cryptopia="#AAAAAA", Binance="#FFCC33",
-                   "ETH Wallet"="#44AAEE", "Electrum Wallet"="#1166FF", "NA"="#FFAAAA")
+                   Coinbase="#3377DD",
+                   "ETH Wallet"="#66AAEE", "Electrum Wallet"="#1155FF", "NA"="#FFAAAA")
 
-ggplot(aes(Cur, Bal.USD, fill=Exchange), data=copy(BG)[, Cur:=factor(Cur, levels=levels_Cur)]) +
-  geom_bar(stat="identity", position="stack") +
-  scale_fill_manual(values=exchange_cols) +
-  coord_flip() +
-  facet_wrap(~Group, scales="free_y")
+BGsub <- copy(BG)[Group != "Trade" & Group != "TradeFee"][, Cur:=factor(Cur, levels=levels_Cur)][
+  is.na(Group) | Group %in% c("Deposit","Withdrawal"), Group := "Deposit/Withdraw/Other"
+]
 
-ggplot(aes(Cur, Bal.USD, fill=Exchange), data=copy(BG)[, Cur:=factor(Cur, levels=levels_Cur)][Group=="Trade"]) +
-  geom_bar(stat="identity", position="stack") +
-  scale_fill_manual(values=exchange_cols) +
-  coord_flip() +
-  facet_wrap(~Group, scales="free_y")
+opts <- list(
+  geom_bar(stat="identity", position="stack", col="white", size=0.07),
+  scale_fill_manual(values=exchange_cols),
+  coord_flip(),
+  facet_wrap(~Group, scales="free_y"))
+
+ggplot(aes(Cur, Bal.USD, fill=Exchange), data=BGsub) + opts
+ggplot(aes(Cur, Bal.BTC, fill=Exchange), data=BGsub) + opts
+
+BGsub <- copy(BG)[, Cur:=factor(Cur, levels=levels_Cur)][Group == "TradeFee", Group := "Trade"][Group=="Trade"]
+
+ggplot(aes(Cur, Bal.USD, fill=Exchange), data=BGsub) + opts
+ggplot(aes(Cur, Bal.BTC, fill=Exchange), data=BGsub) + opts
+```
+
+## Balance by Exchange
+```{r}
+BE <- balance_summaries(Combined.D, by=c("Cur", "Exchange"))[, Cur:=factor(Cur, levels=levels_Cur)]
+
+opts <- list(
+  geom_bar(stat="identity", position="stack", col="white", size=0.07, show.legend=FALSE),
+  coord_flip(),
+  facet_wrap(~Exchange, scales="free_y"))
+
+ggplot(aes(Cur, Bal.USD, fill=Cur), data=BE) + opts
+ggplot(aes(Cur, Bal.BTC, fill=Cur), data=BE) + opts
+
+BE
 ```
 
 ## Trade vs. Non-Trade Balances
@@ -94,5 +140,17 @@ TradeAnalysis
 # Non-Mining and Trading Transactions
 
 ```{r}
-Combined[!(Group%in%c("Trade","Mining","TradeFee"))]
+FN <- function(x) as.character(as.numeric(x))
+Combined[!(Group%in%c("Trade","Mining","TradeFee"))][, `:=`(Buy=FN(Buy), Sell=FN(Sell))]
+```
+
+# Balances by Time
+
+```{r}
+source("PlotBalances.R")
+
+qplot(DateTime, cBal.N, data=CBals.D, geom="line") + facet_wrap(~Cur, scales="free_y")
+qplot(DateTime, cBal.BTC, data=CBals.D, geom="line") + facet_wrap(~Cur, scales="free_y")
+qplot(DateTime, cBal.USD, data=CBals.D, geom="line") + facet_wrap(~Cur, scales="free_y")
+
 ```
