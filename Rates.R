@@ -24,15 +24,14 @@ get_rates <- function(curA, curB) {
   }
 }
 
-
-curAs <- c(sort(unique(Combined.D$Cur)), "XLM")
-curBs <- c("USD", "BTC")
+curAs <- sort(unique(Combined.D$Cur))
+curBs <- c("USD", "CAD", "BTC")
 
 Rates <- list()
 Rates.N <- list()
 for (curA in curAs) {
   for (curB in curBs) {
-    #print(sprintf("%s/%s", curA, curB))
+    print(sprintf("Getting rates: %s/%s", curA, curB))
     if (curA == curB) {
       Rates[[curA]][[curB]] <- data.table(DateTime=NA, Close="1", High="1", Low="1", Open="1")
       Rates.N[[curA]][[curB]] <- data.table(DateTime=NA, Close=1, High=1, Low=1, Open=1)
@@ -46,6 +45,3 @@ for (curA in curAs) {
     }
   }
 }
-
-Rates$STR <- Rates$XLM
-Rates.N$STR <- Rates.N$XLM
