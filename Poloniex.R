@@ -8,7 +8,9 @@ import_Poloniex_TradeHistory <- function(file) {
       Price = col_character(),
       `Quote Total Less Fee` = col_character(), 
       Total = col_character(),
+      Category = col_character(),
       Date=col_datetime("%Y-%m-%d %H:%M:%S"))))
+  #[Category=="Exchange"]
   
   Poloniex.TH[, `:=`(Q=`Quote Total Less Fee`, B=`Base Total Less Fee`)]
   Poloniex.TH[, `:=`(Date= as.Date(Date), DateTime=Date)]
@@ -17,7 +19,7 @@ import_Poloniex_TradeHistory <- function(file) {
   Poloniex.TH <- fill_buy_sell(Poloniex.TH)
   Poloniex.TH[Type=="Buy", `:=`(Buy=Q, Sell=negate(B))]
   Poloniex.TH[Type=="Sell", `:=`(Buy=B, Sell=negate(Q))]
-  Poloniex.TH <- Poloniex.TH[, .(Date, DateTime, BuyCur, Buy, SellCur, Sell, Rate=Price, Id=`Order Number`, Exchange="Poloniex", Group="Trade", Type)]
+  Poloniex.TH <- Poloniex.TH[, .(Date, DateTime, BuyCur, Buy, SellCur, Sell, Rate=Price, Id=`Order Number`, Exchange="Poloniex", Group="Trade", Type, Category)]
   Poloniex.TH
 }
 

@@ -35,6 +35,7 @@ to_delta <- function(DT) {
   
   DT.D <- rbind(DT.Buys, DT.Sells)
   setorder(DT.D, TOrd)
+  DT.D[, c("Buy","BuyCur","Sell","SellCur") := NULL]
   return(DT.D)
 }
 
