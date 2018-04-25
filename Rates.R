@@ -4,7 +4,7 @@ get_rates <- function(curA, curB) {
   if (file.exists(path)) {
     resp <- fromJSON(path)
   } else {
-    url <- paste0("https://min-api.cryptocompare.com/data/histohour?fsym=", curA, "&tsym=", curB, "&e=CCCAGG&limit=10000")
+    url <- paste0("https://min-api.cryptocompare.com/data/histoday?fsym=", curA, "&tsym=", curB, "&e=CCCAGG&limit=10000")
     resp <- fromJSON(url)
     write_json(resp, path, digits=32)
   }

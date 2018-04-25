@@ -1,4 +1,3 @@
-# TODO add transaction fees
 import_Etherscan <- function(addr) {
   addr <- tolower(addr)
   url <- paste0("http://api.etherscan.io/api?module=account&action=txlist&sort=desc&address=", addr)

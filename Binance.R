@@ -2,6 +2,9 @@ import_Binance_TradeHistory <- function(file) {
   Binance.TH <- data.table(read_excel(
     file, 
     col_types = c("text", "text", "text", "text", "text", "text", "text", "text")))
+  
+  names(Binance.TH)[names(Binance.TH) == "Date(UTC)"] <- "Date" 
+  
   Binance.TH[, DateTime := as.POSIXct(Date, tz="UTC")][, Date := as.Date(DateTime)]
   Binance.TH[, Market := gsub("(BTC|ETH|BNB|USDT)$", "/\\1", Market)]
   Binance.TH[, Type := ifelse(Type=="BUY", "Buy", "Sell")]

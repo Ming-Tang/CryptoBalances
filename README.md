@@ -64,6 +64,7 @@ Known Issues
 
  - Ethereum token balances in wallets are not retrieved.
  - Bitcoin Cash automatically issued by exchanges are not taken into account.
+ - Airdrops and GAS distributions in Binance are not taken into account.
  - Transaction fees are only listed for Etherscan transactions.
 
 Sample `import.R`
@@ -94,4 +95,10 @@ Combined <- rbindlist(list(
   Binance.TH, Binance.DH, Binance.WH,
   Etherscan, Electrum_BTC), fill=TRUE)
 
+# Manually enter BCH fork balance from Poloniex
+Combined <- rbind(Combined, data.table(
+  Date=as.Date("2017-08-14"), DateTime=as.POSIXct("2017-08-14", "UTC"), 
+  BuyCur="BCH", Buy="0.01", SellCur="BCH",
+  Sell="0", Exchange="Poloniex", Group="Fork"
+), fill=TRUE)
 ```

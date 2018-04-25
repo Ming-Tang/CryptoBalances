@@ -10,6 +10,7 @@ source("Cryptopia.R")
 source("Binance.R")
 source("Etherscan.R")
 source("Electrum.R")
+source("Coinbase.R")
 source("import.R")
 
 setorder(Combined, -DateTime)
@@ -33,12 +34,14 @@ setorder(Combined.D, DateTime)
 
 # Current Balances
 ```{r}
-usd_rate <- function(Cur) { if (is.null(Rates.N[[Cur]]$USD)) 0 else Rates.N[[Cur]]$USD[.N, Close]  }
-btc_rate <- function(Cur) { if (is.null(Rates.N[[Cur]]$BTC)) 0 else Rates.N[[Cur]]$BTC[.N, Close]  }
+usd_rate <- function(Cur) { if (Cur == "USD") 1 else if (is.null(Rates.N[[Cur]]$USD)) 0 else Rates.N[[Cur]]$USD[.N, Close]  }
+btc_rate <- function(Cur) { if (Cur == "BTC") 1 else if (is.null(Rates.N[[Cur]]$BTC)) 0 else Rates.N[[Cur]]$BTC[.N, Close]  }
 
 Balances <- Combined.D[, .(Bal=as.character(as.numeric(bsum(dBal)))), by=Cur][order(Cur),]
-Balances <- Balances[,.(Bal, Bal.USD = usd_rate(Cur)*as.numeric(Bal), Bal.BTC = btc_rate(Cur)*as.numeric(Bal)), by=Cur]
-Balances <- Balances[, Frac := Bal.USD/sum(Bal.USD)][order(-Frac)]
+Balances <- Balances[,.(Bal = Bal,
+                        Bal.USD = round(usd_rate(Cur)*as.numeric(Bal), 2),
+                        Bal.BTC = round(btc_rate(Cur)*as.numeric(Bal), 4)), by=Cur]
+Balances <- Balances[, Frac := round(Bal.USD/sum(Bal.USD), 2)][order(-Frac)]
 
 Balances
 list(USD=sum(Balances$Bal.USD), BTC=sum(Balances$Bal.BTC))
@@ -141,7 +144,10 @@ TradeAnalysis
 
 ```{r}
 FN <- function(x) as.character(as.numeric(x))
-Combined[!(Group%in%c("Trade","Mining","TradeFee"))][, `:=`(Buy=FN(Buy), Sell=FN(Sell))]
+Combined[, IsTransfer := (!(Group %in% c("Trade","Mining","TradeFee","Fork")) & (is.na(To) | To != "1CuT3FARAchKxdwBoNZC8QUUirEcgXB53c"))]
+Combined.D[, IsTransfer := (!(Group %in% c("Trade","Mining","TradeFee","Fork")) & (is.na(To) | To != "1CuT3FARAchKxdwBoNZC8QUUirEcgXB53c"))]
+Transfers <- Combined[IsTransfer == TRUE][, `:=`(Buy=FN(Buy), Sell=FN(Sell))]
+Transfers
 ```
 
 # Balances by Time
@@ -153,4 +159,27 @@ qplot(DateTime, cBal.N, data=CBals.D, geom="line") + facet_wrap(~Cur, scales="fr
 qplot(DateTime, cBal.BTC, data=CBals.D, geom="line") + facet_wrap(~Cur, scales="free_y")
 qplot(DateTime, cBal.USD, data=CBals.D, geom="line") + facet_wrap(~Cur, scales="free_y")
 
+```
+
+# ACB Report for 2017
+
+```{r acb}
+source("ACB.R")
+```
+
+## Mining Only
+```{r}
+DBals <- Combined.D[DateTime<"2018-01-01" & Group=="Mining"]
+ACB <- acb_report(DBals)
+ACB$FinalACB
+ACB$TotalACB
+```
+
+## All Transactions
+
+```{r}
+DBals <- Combined.D[DateTime>"2016-12-31" & DateTime<"2018-01-01"][, c(.SD, calc_ACB(RateUSD, dBal)), by=Cur]
+ACB <- acb_report(DBals)
+ACB$FinalACB
+ACB$TotalACB
 ```

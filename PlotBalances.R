@@ -18,9 +18,9 @@ CBals.D <- CBals.D[
   , by="Cur"]
 setkey(CBals.D, Cur, DateTime)
 
-#CBals.D <- Rates.USD[Rates.BTC[CBals.D, roll=-Inf], roll=-Inf]
-#CBals.D[Cur=="BTC", RateSat := 1e8]
-#CBals.D[Cur=="USD", RateUSD := 1]
+CBals.D <- Rates.USD[Rates.BTC[CBals.D, roll=-Inf], roll=-Inf]
+CBals.D[Cur=="BTC", RateSat := 1e8]
+CBals.D[Cur=="USD", RateUSD := 1]
 
 CBals.D[, Date := as.Date(DateTime)]
 

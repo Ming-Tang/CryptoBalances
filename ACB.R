@@ -1,4 +1,5 @@
 
+# Rate: used to calculate value at any given time
 calc_ACB <- function(Rate, dBal) {
   # cBal: current balance
   # dACB: change in adjusted cost basis 
@@ -14,6 +15,7 @@ calc_ACB <- function(Rate, dBal) {
   
   cACB_ <- as.bigq(0)
   cBal_ <- as.bigq(0)
+  cAvC_ <- as.bigq(NA)
   div <- function(x, y) if (is.na(y) || y == 0) as.bigq(NA) else x/y
   for (i in 1L:nrow(DBals)) {
     row <- DBals[i]
@@ -41,14 +43,13 @@ calc_ACB <- function(Rate, dBal) {
   DBals
 }
 
-# Usage (for one currency)
-DBals <- Combined.D[Cur=="SC"][, c(.SD, calc_ACB(RateUSD, dBal))]
-setorder(DBals, DateTime)
-View(DBals[, .(P, DateTime, Cur, RateBTC=Rate, RateUSD, cBal.N, dBal.N, Rate.N, dACB.N, cACB.N, cAvC.N)])
-
-# Usage (for all currencies)
-# Combined.D[, c(.SD, calc_ACB(RateUSD, dBal)), by=Cur]
-# View(Combined.D[, .SD[.N], by=Cur][, RateUSD := NULL][
-#         , c(.SD, RateUSD=usd_rate(Cur)), by=Cur
-#       ][cBal.N != 0, .(Cur, cBal.N, RateBTC, RateUSD, cACB.N, 
-#                       cAvC.N, Ratio= round(as.numeric(RateUSD) / as.numeric(cAvC.N),4) )])
+acb_report <- function(Combined.D) {
+  FinalACB <- DBals[, c(.SD, calc_ACB(RateUSD, dBal)), by=Cur][, .SD[.N], by=Cur][, RateUSD := NULL][
+    , c(.SD, RateUSD=usd_rate(Cur)), by=Cur
+  ][cBal.N != 0,
+    .(LastTrade=DateTime, Cur, cBal.N, cACB.N, 
+      cAvC.N, RateBTC, RateUSD,
+      ProfitRatio = round(as.numeric(RateUSD) / as.numeric(cAvC.N), 4) - 1 )]
+  TotalACB <- sum(as.numeric(FinalACB$cACB.N), na.rm=TRUE)
+  return(list(FinalACB=FinalACB, TotalACB=TotalACB))
+}
